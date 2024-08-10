@@ -1,7 +1,7 @@
 
 
-# Stop the Docker Compose services
-docker-compose down
+# Stop the Docker Compose services + remove Volumes
+docker-compose down -v
 
 # Verwijder  Docker volumes
 sudo docker volume rm wordpress_data || true

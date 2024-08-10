@@ -1,15 +1,4 @@
 <?php
-/*
-Plugin Name: Data-Base Client
-Description: Create a database for Client
-Version: 1.0
-Author: Amghar Hamza
-*/
-
-
-register_activation_hook(__FILE__, 'create_custom_db_table');
-
-
 function create_custom_db_table() {
     global $wpdb;
 
