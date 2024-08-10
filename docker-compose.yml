@@ -1,0 +1,69 @@
+services:
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress
+    restart: always
+    ports:
+      - "8081:80"  # Changed from 8080 to 8081
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wordpress_data:/var/www/html
+
+  db:
+    image: mysql:5.7
+    container_name: db
+    restart: always
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppassword
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - db_data:/var/lib/mysql
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "15673:15672"  # Changed Management UI port
+      - "5673:5672"    # Changed AMQP port
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+
+  fossbilling:
+    build: ./fossbilling
+    # image: fossbilling/fossbilling:latest
+    container_name: fossbilling
+    ports:
+      - "8090:80"
+    depends_on:
+      - foss_db
+    environment:
+      DB_HOST: foss_db
+      DB_USER: fossuser
+      DB_PASSWORD: fosspassword
+      DB_NAME: fossbilling
+    volumes:
+      - fossbilling_data:/var/www/html
+
+  foss_db:
+    image: mysql:5.7
+    container_name: foss_db
+    environment:
+      MYSQL_DATABASE: fossbilling
+      MYSQL_USER: fossuser
+      MYSQL_PASSWORD: fosspassword
+      MYSQL_ROOT_PASSWORD: fossrootpassword
+    volumes:
+      - foss_db_data:/var/lib/mysql
+
+volumes:
+  wordpress_data:
+  db_data:
+  fossbilling_data:
+  foss_db_data:
