@@ -20,6 +20,7 @@ COPY ./rest-Api /var/www/html/wp-content/plugins/rest-Api
 
 # Installeer Composer dependencies voor de rest-Api plugin
 RUN composer install --working-dir=/var/www/html/wp-content/plugins/rest-Api/
+RUN composer require php-amqplib/php-amqplib
 
 # Zorg voor de juiste permissies
 RUN chown -R www-data:www-data /var/www/html
