@@ -204,24 +204,41 @@ class Admin extends \Api_Abstract
      * @return bool
      */
     public function delete($data)
-    {
-        $required = [
-            'id' => 'Client id is missing',
-        ];
-        $this->di['validator']->checkRequiredParamsForArray($required, $data);
- 
-        $model = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
- 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $model->id]]);
- 
-        $id = $model->id;
-        $this->getService()->remove($model);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $id]]);
- 
-        $this->di['logger']->info('Removed client #%s', $id);
- 
-        return true;
-    }
+{
+    $required = [
+        'id' => 'Client id is missing',
+    ];
+    $this->di['validator']->checkRequiredParamsForArray($required, $data);
+
+    $model = $this->di['db']->getExistingModelById('Client', $data['id'], 'Client not found');
+
+    $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $model->id]]);
+
+    $id = $model->id;
+    $this->getService()->remove($model);
+    $this->di['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $id]]);
+
+    $this->di['logger']->info('Removed client #%s', $id);
+
+    // Stuur verwijderingsbericht naar RabbitMQ
+    $this->sendDeleteToRabbitMQ($id);
+
+    return true;
+}
+
+private function sendDeleteToRabbitMQ($clientId)
+{
+    $connection = new AMQPStreamConnection('rabbitmq', 5672, 'user', 'password');
+    $channel = $connection->channel();
+    $channel->queue_declare('foss_client_delete_queue', false, false, false, false);
+
+    $msg = new AMQPMessage(json_encode(['action' => 'delete', 'clientId' => $clientId]));
+    $channel->basic_publish($msg, '', 'foss_client_delete_queue');
+
+    $channel->close();
+    $connection->close();
+}
+
  
     /**
      * Update client profile.
