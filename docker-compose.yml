@@ -1,10 +1,12 @@
+version: '3.7'
+
 services:
   wordpress:
-    image: wordpress:latest
+    build: ./wordpress
     container_name: wordpress
     restart: always
     ports:
-      - "8081:80"  # Changed from 8080 to 8081
+      - "8081:80"
     environment:
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: wpuser
@@ -12,6 +14,9 @@ services:
       WORDPRESS_DB_NAME: wordpress
     volumes:
       - wordpress_data:/var/www/html
+    depends_on:
+      - db
+      - rabbitmq
 
   db:
     image: mysql:5.7
@@ -29,15 +34,14 @@ services:
     image: rabbitmq:management
     container_name: rabbitmq
     ports:
-      - "15673:15672"  # Changed Management UI port
-      - "5673:5672"    # Changed AMQP port
+      - "15673:15672"
+      - "5673:5672"
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
 
   fossbilling:
     build: ./fossbilling
-    # image: fossbilling/fossbilling:latest
     container_name: fossbilling
     ports:
       - "8090:80"
