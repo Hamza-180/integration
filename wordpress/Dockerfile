@@ -12,8 +12,7 @@ RUN apt-get update && apt-get install -y \
 # Installeer Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Kopieer de Data-Client plugin directory naar de WordPress plugins directory
-COPY ./Data-Client /var/www/html/wp-content/plugins/Data-Client
+
 
 # Kopieer de rest-Api plugin directory naar de WordPress plugins directory
 COPY ./rest-Api /var/www/html/wp-content/plugins/rest-Api

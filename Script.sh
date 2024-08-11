@@ -1,23 +1,23 @@
+#!/bin/bash
 
-
-# Stop the Docker Compose services + remove Volumes
+# Stop the Docker Compose services and remove volumes
 docker-compose down -v
 
-# Verwijder  Docker volumes
-sudo docker volume rm wordpress_data || true
-sudo docker volume rm db_data || true
-sudo docker volume rm fossbilling_data || true
-sudo docker volume rm foss_db_data || true 
+# Remove Docker volumes
+sudo docker volume rm integration_wordpress_data || true
+sudo docker volume rm integration_db_data || true
+sudo docker volume rm integration_fossbilling_data || true
+sudo docker volume rm integration_foss_db_data || true 
 
-# Clean up Docker system and volumes
+# Clean up Docker system and unused volumes
 docker system prune -af
 docker volume prune -f
 
-# Build docker compose zonder de cache
+# Build Docker Compose without cache
 docker-compose build --no-cache
 
-# Start het docker compose service
+# Start the Docker Compose services
 docker-compose up -d 
 
-# Print als het werkt 
+# Print confirmation message
 echo "Restart complete."

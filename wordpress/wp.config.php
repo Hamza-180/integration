@@ -31,7 +31,7 @@ define('RABBITMQ_HOST', 'rabbitmq');
 define('RABBITMQ_PORT', 5672);
 define('RABBITMQ_USER', 'user');
 define('RABBITMQ_PASSWORD', 'password');
-define('RABBITMQ_QUEUE', 'foss_client_update_queue');
+
 
 /**#@+
  * Authentication Unique Keys and Salts.

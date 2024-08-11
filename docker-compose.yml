@@ -35,7 +35,7 @@ services:
     container_name: rabbitmq
     ports:
       - "15673:15672"
-      - "5673:5672"
+      - "5672:5672"
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
@@ -54,6 +54,7 @@ services:
       DB_NAME: fossbilling
     volumes:
       - fossbilling_data:/var/www/html
+      - fossbilling_config:/var/www/html/config
 
   foss_db:
     image: mysql:5.7
@@ -66,8 +67,21 @@ services:
     volumes:
       - foss_db_data:/var/lib/mysql
 
+  consumer:
+    build: ./consumer
+    container_name: consumer
+    depends_on:
+      - rabbitmq
+      - fossbilling
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: user
+      RABBITMQ_PASS: password
+
 volumes:
   wordpress_data:
   db_data:
   fossbilling_data:
+  fossbilling_config:
   foss_db_data:
