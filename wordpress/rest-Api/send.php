@@ -164,12 +164,25 @@ class RabbitSender {
     public function __construct() {
         $this->connection = new AMQPStreamConnection('rabbitmq', 5672, 'user', 'password'); 
         $this->channel = $this->connection->channel();
-        $this->channel->queue_declare('wordpress_to_fossbilling_queue', false, false, false, false);
+        $this->channel->queue_declare('foss_client_queue', false, false, false, false);
+        $this->channel->queue_declare('foss_client_update_queue', false, false, false, false);
+        $this->channel->queue_declare('foss_client_delete_queue', false, false, false, false);
     }
 
     public function publish($message) {
         $msg = new AMQPMessage($message);
-        $this->channel->basic_publish($msg, '', 'wordpress_to_fossbilling_queue');
+        $action = json_decode($message, true)['action'];
+        switch ($action) {
+            case 'create':
+                $this->channel->basic_publish($msg, '', 'foss_client_queue');
+                break;
+            case 'update':
+                $this->channel->basic_publish($msg, '', 'foss_client_update_queue');
+                break;
+            case 'delete':
+                $this->channel->basic_publish($msg, '', 'foss_client_delete_queue');
+                break;
+        }
     }
 
     public function __destruct() {
@@ -219,4 +232,72 @@ function client_manager_delete_client() {
 }
 add_action('admin_init', 'client_manager_delete_client');
 
+// REST API endpoints
+add_action('rest_api_init', function () {
+    register_rest_route('wp/v2', '/clients', [
+        'methods' => 'POST',
+        'callback' => 'create_client',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('wp/v2', '/clients/(?P<id>\d+)', [
+        'methods' => 'POST',
+        'callback' => 'update_client',
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('wp/v2', '/clients/(?P<id>\d+)', [
+        'methods' => 'DELETE',
+        'callback' => 'delete_client',
+        'permission_callback' => '__return_true',
+    ]);
+});
+
+function create_client(WP_REST_Request $request) {
+    $name = sanitize_text_field($request['name']);
+    $email = sanitize_email($request['email']);
+
+    if (empty($name) || empty($email)) {
+        return new WP_Error('invalid_data', 'Name and email are required', array('status' => 422));
+    }
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'clients';
+    $wpdb->insert($table_name, [
+        'name' => $name,
+        'email' => $email,
+        'created_at' => current_time('mysql')
+    ]);
+
+    return new WP_REST_Response(['status' => 'success'], 201);
+}
+
+function update_client(WP_REST_Request $request) {
+    $id = (int) $request['id'];
+    $name = sanitize_text_field($request['name']);
+    $email = sanitize_email($request['email']);
+
+    if (empty($name) || empty($email)) {
+        return new WP_Error('invalid_data', 'Name and email are required', array('status' => 422));
+    }
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'clients';
+    $wpdb->update($table_name, [
+        'name' => $name,
+        'email' => $email
+    ], ['id' => $id]);
+
+    return new WP_REST_Response(['status' => 'success'], 200);
+}
+
+function delete_client(WP_REST_Request $request) {
+    $id = (int) $request['id'];
+
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'clients';
+    $wpdb->delete($table_name, ['id' => $id]);
+
+    return new WP_REST_Response(['status' => 'success'], 200);
+}
 ?>
