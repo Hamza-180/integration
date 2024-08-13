@@ -1,8 +1,10 @@
 <?php
-require_once './vendor/autoload.php';
- 
+
+require_once __DIR__ . '/vendor/autoload.php';
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use PhpAmqpLib\Exception\AMQPIOException;
+use GuzzleHttp\Client;
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -11,17 +13,17 @@ error_reporting(E_ALL);
 file_put_contents('php://stdout', "consumer.php started\n");
 
 $interval = 10;
- 
+
 while (true) {
     echo "Running task at " . date('Y-m-d H:i:s') . "\n";
- 
+
     sleep($interval);
- 
-    $host = 'rabbitmq'; 
+
+    $host = 'rabbitmq';
     $port = 5672;
     $user = 'user';
     $password = 'password';
- 
+
     try {
         $connection = new AMQPStreamConnection($host, $port, $user, $password);
         file_put_contents('php://stdout', "Connected to RabbitMQ\n");
@@ -31,62 +33,66 @@ while (true) {
     }
 
     $channel = $connection->channel();
- 
-    $channel->queue_declare('wp_client_queue', false, true, false, false);
- 
-    function create_user_foss($data){
-        $url = "http://192.168.129.69:8090/api/admin/client/create";
- 
-        $data = array(
+    $channel->queue_declare('foss_client_queue', false, true, false, false);
+
+    function create_user_wordpress($data) {
+        $client = new Client();
+        $url = "http://192.168.129.69:8081/wp-json/wp/v2/clients";
+
+        $jsonData = [
+            "name" => $data['name'], // Zorg ervoor dat de velden overeenkomen
             "email" => $data['email'],
-            "first_name" => $data['name'],
-            "password" => "User12345"
-        );
- 
-        $jsonData = json_encode($data);
- 
-        $ch = curl_init($url);
- 
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json'
-        ));
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
- 
-        curl_setopt($ch, CURLOPT_USERPWD, "admin:5bQCJkzKkFeS39drmUc1mE2cfCIGcFWz");
- 
-        $response = curl_exec($ch);
- 
-        if (curl_errno($ch)) {
-            echo 'Error:' . curl_error($ch);
-        } else {
-            echo 'Response:' . $response;
+        ];
+
+        try {
+            $response = $client->post($url, [
+                'json' => $jsonData
+            ]);
+
+            echo "Response status: " . $response->getStatusCode() . "\n";
+            echo "Response body: " . $response->getBody() . "\n";
+
+            if ($response->getStatusCode() == 201) {
+                echo "Action create completed for user: " . $data['email'] . "\n";
+            } else {
+                echo "Action create failed for user: " . $data['email'] . "\n";
+                echo "Response: " . $response->getBody() . "\n";
+            }
+        } catch (Exception $e) {
+            echo "Error processing create action: " . $e->getMessage() . "\n";
+            echo "Stack trace: " . $e->getTraceAsString() . "\n";
         }
- 
-        curl_close($ch);
     }
- 
+
     $callback = function($msg) {
         echo 'Received ', $msg->body, "\n";
         $data = json_decode($msg->body, true);
+    
+        if (!isset($data['action'])) {
+            echo "Missing action in message\n";
+            return;
+        }
+    
         $action = $data['action'];
         switch ($action) {
             case 'create':
-                create_user_foss($data);
+                create_user_wordpress($data);
                 break;
             default:
+                echo "Unknown action: $action\n";
                 break;
         }
         echo "Done\n";
     };
- 
-    $channel->basic_consume('wp_client_queue', '', false, true, false, false, $callback);
- 
+    
+
+    $channel->basic_consume('foss_client_queue', '', false, true, false, false, $callback);
+
     while ($channel->is_consuming()) {
         $channel->wait();
     }
- 
+
     $channel->close();
     $connection->close();
 }
+?>

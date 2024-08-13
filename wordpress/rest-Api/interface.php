@@ -173,8 +173,7 @@ class RabbitSender {
         $this->connection = new AMQPStreamConnection('rabbitmq', 5672, 'user', 'password'); 
         $this->channel = $this->connection->channel();
         $this->channel->queue_declare('wp_client_queue', false, true, false, false);
-        $this->channel->queue_declare('wp_client_update_queue', false, true, false, false);
-        $this->channel->queue_declare('wp_client_delete_queue', false, true, false, false);
+        
     }
 
     public function publish($message) {
@@ -185,10 +184,10 @@ class RabbitSender {
                 $this->channel->basic_publish($msg, '', 'wp_client_queue');
                 break;
             case 'update':
-                $this->channel->basic_publish($msg, '', 'wp_client_update_queue');
+                $this->channel->basic_publish($msg, '', 'wp_client_queue');
                 break;
             case 'delete':
-                $this->channel->basic_publish($msg, '', 'wp_client_delete_queue');
+                $this->channel->basic_publish($msg, '', 'wp_client_queue');
                 break;
         }
     }

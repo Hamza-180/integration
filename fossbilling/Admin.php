@@ -142,60 +142,51 @@ class Admin extends \Api_Abstract
     {
         $required = [
             'email' => 'Email required',
-            'first_name' => 'First name is required',
+            'first_name' => 'Name is required',
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
-   
+
         $validator = $this->di['validator'];
         $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
-   
+
         $service = $this->getService();
         if ($service->emailAlreadyRegistered($data['email'])) {
             throw new \FOSSBilling\InformationException('This email address is already registered.');
         }
-   
+
         $validator->isPasswordStrong($data['password']);
-   
+
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
         $id = $service->adminCreateClient($data);
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $data]);
-   
-        // Prepare the data for RabbitMQ
+
         $rabbitMqData = [
             'client_id' => $id,
             'email' => $data['email'],
-            'first_name' => $data['first_name'],
-            // Add any additional fields you need to pass to RabbitMQ
+            'name' => $data['first_name'], 
+            'action' => 'create',
+            // name verplaatst met first_name
         ];
-   
-        // Publish to RabbitMQ
-        $this->sendToRabbitMQ($rabbitMqData);
-   
+
+        $this->sendToRabbitMQ($rabbitMqData,'create');
+
         return $id;
     }
-   
-    /**
-     * Publishes data to RabbitMQ queue.
-     *
-     * @param array $data The data to be published.
-     */
-      /**
-   * Send data to RabbitMQ
-   *
-   * @param array $data - Client data
-   */
-    private function sendToRabbitMQ($data)
-    {
-        $connection = new AMQPStreamConnection('rabbitmq', 5672, 'user', 'password');
-        $channel = $connection->channel();
-        $channel->queue_declare('foss_client_queue', false, false, false, false);
-   
-        $msg = new AMQPMessage(json_encode($data));
-        $channel->basic_publish($msg, '', 'foss_client_queue');
-   
-        $channel->close();
-        $connection->close();
-    }
+
+    private function sendToRabbitMQ($data, $action)
+{
+    $data['action'] = $action; // Zorg ervoor dat 'action' correct wordt ingesteld
+    $connection = new AMQPStreamConnection('rabbitmq', 5672, 'user', 'password');
+    $channel = $connection->channel();
+    $channel->queue_declare('foss_client_queue', false, true, false, false);
+
+    $msg = new AMQPMessage(json_encode($data));
+    $channel->basic_publish($msg, '', 'foss_client_queue');
+
+    $channel->close();
+    $connection->close();
+}
+
    
  
     /**

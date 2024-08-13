@@ -1,97 +1,92 @@
 <?php
-
-/*
-
-
-require_once __DIR__ . '/vendor/autoload.php';
-
+require_once './vendor/autoload.php';
+ 
 use PhpAmqpLib\Connection\AMQPStreamConnection;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
+use PhpAmqpLib\Message\AMQPMessage;
 
-$maxRetries = 5;
-$retryDelay = 10; // secondes
-$attempts = 0;
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-while ($attempts < $maxRetries) {
+file_put_contents('php://stdout', "consumer.php started\n");
+
+$interval = 10;
+ 
+while (true) {
+    echo "Running task at " . date('Y-m-d H:i:s') . "\n";
+ 
+    sleep($interval);
+ 
+    $host = 'rabbitmq'; 
+    $port = 5672;
+    $user = 'user';
+    $password = 'password';
+ 
     try {
-        $connection = new AMQPStreamConnection('rabbitmq', 5672, 'user', 'password');
-        $channel = $connection->channel();
-
-        $channel->queue_declare('foss_client_queue', false, false, false, false);
-        $channel->queue_declare('foss_client_update_queue', false, false, false, false);
-        $channel->queue_declare('foss_client_delete_queue', false, false, false, false);
-
-        echo " [*] Waiting for messages. To exit press CTRL+C\n";
-
-        $client = new Client();
-
-        $callback = function ($msg) use ($client) {
-            $data = json_decode($msg->body, true);
-            $action = $data['action'];
-
-            // Log des données reçues de RabbitMQ
-            echo ' [x] Received data: ' . print_r($data, true) . "\n";
-
-            try {
-                $response = null;
-                switch ($action) {
-                    case 'create':
-                        $response = $client->post('http://192.168.129.69:8081/wp-json/wp/v2/clients', [
-                            'json' => [
-                                'name' => $data['name'],  // Utilisez les champs exacts reçus
-                                'email' => $data['email'],
-                            ]
-                        ]);
-                        break;
-
-                    case 'update':
-                        $response = $client->post('http://192.168.129.69:8081/wp-json/wp/v2/clients/' . $data['id'], [
-                            'json' => [
-                                'name' => $data['name'],  // Utilisez les champs exacts reçus
-                                'email' => $data['email'],
-                            ]
-                        ]);
-                        break;
-
-                    case 'delete':
-                        $response = $client->delete('http://192.168.129.69:8081/wp-json/wp/v2/clients/' . $data['id']);
-                        break;
-                }
-
-                if ($response) {
-                    echo ' [x] Request Body: ' . json_encode($data) . "\n";
-                    echo ' [x] Response: ' . $response->getBody() . "\n";
-                }
-            } catch (RequestException $e) {
-                echo ' [!] Request Error: ' . $e->getMessage() . "\n";
-                if ($e->hasResponse()) {
-                    echo ' [!] Response Body: ' . $e->getResponse()->getBody() . "\n";
-                }
-            }
-
-            echo ' [x] Processed message: ', $msg->body, "\n";
-        };
-
-        $channel->basic_consume('foss_client_queue', '', false, true, false, false, $callback);
-        $channel->basic_consume('foss_client_update_queue', '', false, true, false, false, $callback);
-        $channel->basic_consume('foss_client_delete_queue', '', false, true, false, false, $callback);
-
-        while ($channel->is_consuming()) {
-            $channel->wait();
-        }
-
-        $channel->close();
-        $connection->close();
-        break; // Si la connexion réussit, sortir de la boucle
-
+        $connection = new AMQPStreamConnection($host, $port, $user, $password);
+        file_put_contents('php://stdout', "Connected to RabbitMQ\n");
     } catch (Exception $e) {
-        $attempts++;
-        if ($attempts >= $maxRetries) {
-            echo "Error: ", $e->getMessage(), "\n";
-        } else {
-            echo "Attempt $attempts failed: ", $e->getMessage(), "\n";
-            sleep($retryDelay); // Attendre avant de réessayer
-        }
+        file_put_contents('php://stdout', "Failed to connect to RabbitMQ: " . $e->getMessage() . "\n");
+        continue;
     }
-} */
+
+    $channel = $connection->channel();
+ 
+    $channel->queue_declare('wp_client_queue', false, true, false, false);
+ 
+    function create_user_foss($data){
+        $url = "http://192.168.129.69:8090/api/admin/client/create";
+ 
+        $data = array(
+            "email" => $data['email'],
+            "first_name" => $data['name'],
+            "password" => "User12345"
+        );
+ 
+        $jsonData = json_encode($data);
+ 
+        $ch = curl_init($url);
+ 
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json'
+        ));
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+ 
+        curl_setopt($ch, CURLOPT_USERPWD, "admin:5bQCJkzKkFeS39drmUc1mE2cfCIGcFWz");
+ 
+        $response = curl_exec($ch);
+ 
+        if (curl_errno($ch)) {
+            echo 'Error:' . curl_error($ch);
+        } else {
+            echo 'Response:' . $response;
+        }
+ 
+        curl_close($ch);
+    }
+ 
+    $callback = function($msg) {
+        echo 'Received ', $msg->body, "\n";
+        $data = json_decode($msg->body, true);
+        $action = $data['action'];
+        switch ($action) {
+            case 'create':
+                create_user_foss($data);
+                break;
+            default:
+                break;
+        }
+        echo "Done\n";
+    };
+ 
+    $channel->basic_consume('wp_client_queue', '', false, true, false, false, $callback);
+ 
+    while ($channel->is_consuming()) {
+        $channel->wait();
+    }
+ 
+    $channel->close();
+    $connection->close();
+}
