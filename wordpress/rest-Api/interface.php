@@ -57,6 +57,8 @@ function client_manager_overview_page() {
 // Pagina voor het toevoegen van klanten
 function client_manager_add_page() {
     if (isset($_POST['submit_client_form'])) {
+        check_admin_referer('add_client_action', 'add_client_nonce');
+        
         $name = sanitize_text_field($_POST['name']);
         $email = sanitize_email($_POST['email']);
         
@@ -86,6 +88,7 @@ function client_manager_add_page() {
     <div class="wrap">
         <h2>Add Client</h2>
         <form method="post" action="">
+            <?php wp_nonce_field('add_client_action', 'add_client_nonce'); ?>
             <table class="form-table">
                 <tr valign="top">
                     <th scope="row">Name</th>
@@ -109,9 +112,11 @@ function client_manager_edit_page() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'clients';
     $client_id = intval($_GET['id']);
-    $client = $wpdb->get_row("SELECT * FROM $table_name WHERE id = $client_id");
+    $client = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", $client_id));
     
     if (isset($_POST['submit_client_form'])) {
+        check_admin_referer('edit_client_action', 'edit_client_nonce');
+        
         $name = sanitize_text_field($_POST['name']);
         $email = sanitize_email($_POST['email']);
         
@@ -130,6 +135,7 @@ function client_manager_edit_page() {
     <div class="wrap">
         <h2>Edit Client</h2>
         <form method="post" action="">
+            <?php wp_nonce_field('edit_client_action', 'edit_client_nonce'); ?>
             <table class="form-table">
                 <tr valign="top">
                     <th scope="row">Name</th>
@@ -170,31 +176,38 @@ class RabbitSender {
     private $channel;
 
     public function __construct() {
-        $this->connection = new AMQPStreamConnection('rabbitmq', 5672, 'user', 'password'); 
-        $this->channel = $this->connection->channel();
-        $this->channel->queue_declare('wp_client_queue', false, true, false, false);
-        
+        try {
+            $this->connection = new AMQPStreamConnection('rabbitmq', 5672, 'user', 'password'); 
+            $this->channel = $this->connection->channel();
+            $this->channel->queue_declare('wp_client_queue', false, true, false, false);
+        } catch (Exception $e) {
+            error_log('RabbitMQ connection error: ' . $e->getMessage());
+        }
     }
 
     public function publish($message) {
-        $msg = new AMQPMessage($message);
-        $action = json_decode($message, true)['action'];
-        switch ($action) {
-            case 'create':
-                $this->channel->basic_publish($msg, '', 'wp_client_queue');
-                break;
-            case 'update':
-                $this->channel->basic_publish($msg, '', 'wp_client_queue');
-                break;
-            case 'delete':
-                $this->channel->basic_publish($msg, '', 'wp_client_queue');
-                break;
+        try {
+            $msg = new AMQPMessage($message);
+            $action = json_decode($message, true)['action'];
+            switch ($action) {
+                case 'create':
+                case 'update':
+                case 'delete':
+                    $this->channel->basic_publish($msg, '', 'wp_client_queue');
+                    break;
+            }
+        } catch (Exception $e) {
+            error_log('RabbitMQ publish error: ' . $e->getMessage());
         }
     }
 
     public function __destruct() {
-        $this->channel->close();
-        $this->connection->close();
+        try {
+            $this->channel->close();
+            $this->connection->close();
+        } catch (Exception $e) {
+            error_log('RabbitMQ close error: ' . $e->getMessage());
+        }
     }
 }
 
@@ -273,6 +286,10 @@ function create_client(WP_REST_Request $request) {
         'created_at' => current_time('mysql')
     ]);
 
+    // Envoyer les données à RabbitMQ
+    $sender = new RabbitSender();
+    $sender->publish(json_encode(['action' => 'create', 'name' => $name, 'email' => $email]));
+
     return new WP_REST_Response(['status' => 'success'], 201);
 }
 
@@ -292,6 +309,10 @@ function update_client(WP_REST_Request $request) {
         'email' => $email
     ], ['id' => $id]);
 
+    // Envoyer les données mises à jour à RabbitMQ
+    $sender = new RabbitSender();
+    $sender->publish(json_encode(['action' => 'update', 'id' => $id, 'name' => $name, 'email' => $email]));
+
     return new WP_REST_Response(['status' => 'success'], 200);
 }
 
@@ -301,6 +322,10 @@ function delete_client(WP_REST_Request $request) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'clients';
     $wpdb->delete($table_name, ['id' => $id]);
+
+    // Envoyer les données à RabbitMQ
+    $sender = new RabbitSender();
+    $sender->publish(json_encode(['action' => 'delete', 'id' => $id]));
 
     return new WP_REST_Response(['status' => 'success'], 200);
 }

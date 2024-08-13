@@ -212,23 +212,37 @@ class Admin extends \Api_Abstract
     $this->di['logger']->info('Removed client #%s', $id);
 
     // Stuur verwijderingsbericht naar RabbitMQ
-    $this->sendDeleteToRabbitMQ($id);
+    $rabbitMqData = [
+        'client_id' => $id,
+        'email' => $model->email,
+        'name' => $model->first_name,
+        'action' => 'delete'
+    ];
+    $this->sendToRabbitMQ($rabbitMqData, 'delete');
 
     return true;
 }
 
-private function sendDeleteToRabbitMQ($clientId)
+
+
+private function sendDeleteToRabbitMQ($model)
 {
     $connection = new AMQPStreamConnection('rabbitmq', 5672, 'user', 'password');
     $channel = $connection->channel();
-    $channel->queue_declare('foss_client_delete_queue', false, false, false, false);
+    $channel->queue_declare('foss_client_queue', false, true, false, false);
 
-    $msg = new AMQPMessage(json_encode(['action' => 'delete', 'clientId' => $clientId]));
-    $channel->basic_publish($msg, '', 'foss_client_delete_queue');
+    $msg = new AMQPMessage(json_encode([
+        'action' => 'delete',
+        'client_id' => $model->id,
+        'email' => $model->email,
+        'name' => $model->first_name // Assuming the name field is 'first_name'
+    ]));
+    $channel->basic_publish($msg, '', 'foss_client_queue');
 
     $channel->close();
     $connection->close();
 }
+
 
  
     /**
