@@ -285,7 +285,12 @@ private function sendDeleteToRabbitMQ($model)
      *
      * @return bool
      */
-    public function update($data = [])
+    /**
+ * Update client profile.
+ *
+ * @return bool
+ */
+public function update($data = [])
 {
     $required = ['id' => 'Id required'];
     $this->di['validator']->checkRequiredParamsForArray($required, $data);
@@ -374,58 +379,24 @@ private function sendUpdateToRabbitMQ($client)
 {
     $connection = new AMQPStreamConnection('rabbitmq', 5672, 'user', 'password');
     $channel = $connection->channel();
-    $channel->queue_declare('foss_client_update_queue', false, false, false, false);
+    $channel->queue_declare('foss_client_queue', false, true, false, false);
 
     $data = [
         'action' => 'update',
-        'clientId' => $client->id,
-        'clientData' => [
-            'email' => $client->email,
-            'first_name' => $client->first_name,
-            'last_name' => $client->last_name,
-            'aid' => $client->aid,
-            'gender' => $client->gender,
-            'birthday' => $client->birthday,
-            'company' => $client->company,
-            'company_vat' => $client->company_vat,
-            'address_1' => $client->address_1,
-            'address_2' => $client->address_2,
-            'phone' => $client->phone,
-            'document_type' => $client->document_type,
-            'document_nr' => $client->document_nr,
-            'notes' => $client->notes,
-            'country' => $client->country,
-            'postcode' => $client->postcode,
-            'state' => $client->state,
-            'city' => $client->city,
-            'status' => $client->status,
-            'email_approved' => $client->email_approved,
-            'tax_exempt' => $client->tax_exempt,
-            'created_at' => $client->created_at,
-            'custom_1' => $client->custom_1,
-            'custom_2' => $client->custom_2,
-            'custom_3' => $client->custom_3,
-            'custom_4' => $client->custom_4,
-            'custom_5' => $client->custom_5,
-            'custom_6' => $client->custom_6,
-            'custom_7' => $client->custom_7,
-            'custom_8' => $client->custom_8,
-            'custom_9' => $client->custom_9,
-            'custom_10' => $client->custom_10,
-            'client_group_id' => $client->client_group_id,
-            'company_number' => $client->company_number,
-            'type' => $client->type,
-            'lang' => $client->lang,
-            'updated_at' => $client->updated_at,
-        ],
+        'client_id' => $client->id,
+        'email' => $client->email,
+        'first_name' => $client->first_name,
+        'last_name' => $client->last_name,
+        // Ajoutez d'autres champs nécessaires ici
     ];
 
     $msg = new AMQPMessage(json_encode($data));
-    $channel->basic_publish($msg, '', 'foss_client_update_queue');
+    $channel->basic_publish($msg, '', 'foss_client_queue');
 
     $channel->close();
     $connection->close();
 }
+
 
  
     /**
