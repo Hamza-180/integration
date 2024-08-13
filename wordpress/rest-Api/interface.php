@@ -62,17 +62,25 @@ function client_manager_add_page() {
         
         global $wpdb;
         $table_name = $wpdb->prefix . 'clients';
-        $wpdb->insert($table_name, [
-            'name' => $name,
-            'email' => $email,
-            'created_at' => current_time('mysql')
-        ]);
         
-        // Verstuur de gegevens naar RabbitMQ
-        $sender = new RabbitSender();
-        $sender->publish(json_encode(['action' => 'create', 'name' => $name, 'email' => $email]));
+        // Vérifier si l'email existe déjà
+        $email_exists = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE email = %s", $email));
         
-        echo '<div class="updated"><p>Client added and sent to RabbitMQ!</p></div>';
+        if ($email_exists) {
+            echo '<div class="error"><p>Email already exists!</p></div>';
+        } else {
+            $wpdb->insert($table_name, [
+                'name' => $name,
+                'email' => $email,
+                'created_at' => current_time('mysql')
+            ]);
+            
+            // Envoyer les données à RabbitMQ
+            $sender = new RabbitSender();
+            $sender->publish(json_encode(['action' => 'create', 'name' => $name, 'email' => $email]));
+            
+            echo '<div class="updated"><p>Client added and sent to RabbitMQ!</p></div>';
+        }
     }
     ?>
     <div class="wrap">
@@ -112,7 +120,7 @@ function client_manager_edit_page() {
             'email' => $email
         ], ['id' => $client_id]);
         
-        // Verstuur de bijgewerkte gegevens naar RabbitMQ
+        // Envoyer les données mises à jour à RabbitMQ
         $sender = new RabbitSender();
         $sender->publish(json_encode(['action' => 'update', 'id' => $client_id, 'name' => $name, 'email' => $email]));
         
@@ -164,9 +172,9 @@ class RabbitSender {
     public function __construct() {
         $this->connection = new AMQPStreamConnection('rabbitmq', 5672, 'user', 'password'); 
         $this->channel = $this->connection->channel();
-        $this->channel->queue_declare('foss_client_queue', false, false, false, false);
-        $this->channel->queue_declare('foss_client_update_queue', false, false, false, false);
-        $this->channel->queue_declare('foss_client_delete_queue', false, false, false, false);
+        $this->channel->queue_declare('wp_client_queue', false, true, false, false);
+        $this->channel->queue_declare('wp_client_update_queue', false, true, false, false);
+        $this->channel->queue_declare('wp_client_delete_queue', false, true, false, false);
     }
 
     public function publish($message) {
@@ -174,13 +182,13 @@ class RabbitSender {
         $action = json_decode($message, true)['action'];
         switch ($action) {
             case 'create':
-                $this->channel->basic_publish($msg, '', 'foss_client_queue');
+                $this->channel->basic_publish($msg, '', 'wp_client_queue');
                 break;
             case 'update':
-                $this->channel->basic_publish($msg, '', 'foss_client_update_queue');
+                $this->channel->basic_publish($msg, '', 'wp_client_update_queue');
                 break;
             case 'delete':
-                $this->channel->basic_publish($msg, '', 'foss_client_delete_queue');
+                $this->channel->basic_publish($msg, '', 'wp_client_delete_queue');
                 break;
         }
     }
@@ -237,19 +245,16 @@ add_action('rest_api_init', function () {
     register_rest_route('wp/v2', '/clients', [
         'methods' => 'POST',
         'callback' => 'create_client',
-        'permission_callback' => '__return_true',
     ]);
 
     register_rest_route('wp/v2', '/clients/(?P<id>\d+)', [
         'methods' => 'POST',
         'callback' => 'update_client',
-        'permission_callback' => '__return_true',
     ]);
 
     register_rest_route('wp/v2', '/clients/(?P<id>\d+)', [
         'methods' => 'DELETE',
         'callback' => 'delete_client',
-        'permission_callback' => '__return_true',
     ]);
 });
 
