@@ -158,10 +158,10 @@ while (true) {
         echo "Done\n";
     };
 
-    // Consume messages from the queue
+    
     $channel->basic_consume('wp_client_queue', '', false, true, false, false, $callback);
 
-    // Wait for messages to arrive
+    
     while ($channel->is_consuming()) {
         $channel->wait();
     }
