@@ -79,6 +79,18 @@ services:
       RABBITMQ_USER: user
       RABBITMQ_PASS: password
 
+  consumerfoss:
+    build: ./consumerfoss
+    container_name: consumerfoss
+    depends_on:
+      - rabbitmq
+      - wordpress
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: user
+      RABBITMQ_PASS: password
+
 volumes:
   wordpress_data:
   db_data:
