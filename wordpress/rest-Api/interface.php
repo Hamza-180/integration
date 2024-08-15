@@ -271,6 +271,7 @@ add_action('rest_api_init', function () {
 });
 
 function create_client(WP_REST_Request $request) {
+    $id = (int) $request['id'];
     $name = sanitize_text_field($request['name']);
     $email = sanitize_email($request['email']);
 
@@ -281,6 +282,7 @@ function create_client(WP_REST_Request $request) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'clients';
     $wpdb->insert($table_name, [
+        'id' => $id,
         'name' => $name,
         'email' => $email,
         'created_at' => current_time('mysql')
@@ -288,7 +290,7 @@ function create_client(WP_REST_Request $request) {
 
     // Envoyer les données à RabbitMQ
     $sender = new RabbitSender();
-    $sender->publish(json_encode(['action' => 'create', 'name' => $name, 'email' => $email]));
+    $sender->publish(json_encode(['action' => 'create', 'id' => $id, 'name' => $name, 'email' => $email]));
 
     return new WP_REST_Response(['status' => 'success'], 201);
 }

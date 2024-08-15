@@ -158,6 +158,7 @@ class Admin extends \Api_Abstract
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
         $id = $service->adminCreateClient($data);
+        $data['id'] = $id;
         $this->di['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $data]);
 
         $rabbitMqData = [

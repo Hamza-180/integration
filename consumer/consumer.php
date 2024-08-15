@@ -38,6 +38,7 @@ while (true) {
         $url = "http://192.168.129.69:8081/wp-json/wp/v2/clients";
 
         $jsonData = [
+            "id" => $data['client_id'],
             "name" => $data['name'],
             "email" => $data['email'],
         ];
