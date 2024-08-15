@@ -3,7 +3,7 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - Dev
+      - Main
 
 jobs:
   build-and-deploy:
@@ -23,17 +23,17 @@ jobs:
 
       - name: Build consumerfoss image
         run: |
-          cd ../consumerfoss
+          cd consumerfoss
           docker build -t consumerfoss:latest .
 
       - name: Build fossbilling image
         run: |
-          cd ../fossbilling
+          cd fossbilling
           docker build -t fossbilling:latest .
 
       - name: Build wordpress image
         run: |
-          cd ../wordpress
+          cd wordpress
           docker build -t wordpress:latest .
 
       - name: Deploy

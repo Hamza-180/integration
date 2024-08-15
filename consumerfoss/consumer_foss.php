@@ -47,7 +47,7 @@ while (true) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
 
         $username = "admin";
-        $password = "Dgr7MdNjyuyKMR5p6sxu2jkKywkmJma1";
+        $password = "ceTQeItxoQNeJEKu3Yyd7hsHTf3lzDhl";
         curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
 
         // Set options for debugging
@@ -81,7 +81,7 @@ while (true) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
 
         $username = "admin";
-        $password = "Dgr7MdNjyuyKMR5p6sxu2jkKywkmJma1";
+        $password = "ceTQeItxoQNeJEKu3Yyd7hsHTf3lzDhl";
         curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
 
         // Set options for debugging
@@ -117,7 +117,7 @@ while (true) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
 
         $username = "admin";
-        $password = "Dgr7MdNjyuyKMR5p6sxu2jkKywkmJma1";
+        $password = "ceTQeItxoQNeJEKu3Yyd7hsHTf3lzDhl";
         curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
 
         // Set options for debugging

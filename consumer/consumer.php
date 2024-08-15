@@ -88,6 +88,62 @@ while (true) {
             echo "Stack trace: " . $e->getTraceAsString() . "\n";
         }
     }
+    $lastUpdateTime = null;
+
+function update_user_wordpress($data) {
+    global $lastUpdateTime;
+
+    if (!isset($data['client_id'])) {
+        echo "Missing client_id in update message\n";
+        return;
+    }
+
+    if (!isset($data['name']) || !isset($data['email'])) {
+        echo "Missing required fields (name or email) in update message\n";
+        return;
+    }
+
+    // Vérifier la répétition
+    $currentTime = time();
+    if ($lastUpdateTime && ($currentTime - $lastUpdateTime) < 5) {
+        echo "Update request ignored due to rapid repetition.\n";
+        return;
+    }
+    $lastUpdateTime = $currentTime;
+
+    $client = new Client();
+    $url = "http://192.168.129.69:8081/wp-json/wp/v2/clients/" . $data['client_id'];
+
+    $jsonData = [
+        "name" => $data['name'],
+        "email" => $data['email'],
+    ];
+
+    try {
+        echo "Sending request to $url with data: " . json_encode($jsonData) . "\n";
+        $response = $client->post($url, [
+            'headers' => ['Content-Type' => 'application/json'],
+            'json' => $jsonData
+        ]);
+
+        echo "Response status: " . $response->getStatusCode() . "\n";
+        echo "Response body: " . $response->getBody() . "\n";
+
+        if ($response->getStatusCode() == 200) {
+            echo "Action update completed for user: " . $data['client_id'] . "\n";
+        } else {
+            echo "Action update failed for user: " . $data['client_id'] . "\n";
+            echo "Response: " . $response->getBody() . "\n";
+        }
+    } catch (Exception $e) {
+        echo "Error processing update action: " . $e->getMessage() . "\n";
+        echo "Stack trace: " . $e->getTraceAsString() . "\n";
+    }
+}
+
+    
+    
+    
 
     function update_user_wordpress($data) {
         if (!isset($data['client_id'])) {
@@ -132,8 +188,9 @@ while (true) {
             echo "Missing action in message\n";
             return;
         }
-    
+
         $action = $data['action'];
+        echo "Processing action: $action\n";
         switch ($action) {
             case 'create':
                 create_user_wordpress($data);
@@ -150,7 +207,7 @@ while (true) {
         }
         echo "Done\n";
     };
-    
+
     $channel->basic_consume('foss_client_queue', '', false, true, false, false, $callback);
 
     while ($channel->is_consuming()) {

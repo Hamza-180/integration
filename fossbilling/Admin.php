@@ -381,13 +381,16 @@ private function sendUpdateToRabbitMQ($client)
     $channel = $connection->channel();
     $channel->queue_declare('foss_client_queue', false, true, false, false);
 
+    $name = $client->first_name;
+    if (!empty($client->last_name)) {
+        $name .= ' ' . $client->last_name;
+    }
+
     $data = [
         'action' => 'update',
         'client_id' => $client->id,
         'email' => $client->email,
-        'first_name' => $client->first_name,
-        'last_name' => $client->last_name,
-        // Ajoutez d'autres champs nécessaires ici
+        'name' => $name,
     ];
 
     $msg = new AMQPMessage(json_encode($data));
