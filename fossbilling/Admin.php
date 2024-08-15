@@ -381,10 +381,7 @@ private function sendUpdateToRabbitMQ($client)
     $channel = $connection->channel();
     $channel->queue_declare('foss_client_queue', false, true, false, false);
 
-    $name = $client->first_name;
-    if (!empty($client->last_name)) {
-        $name .= ' ' . $client->last_name;
-    }
+    $name = trim($client->first_name . ' ' . $client->last_name); 
 
     $data = [
         'action' => 'update',
@@ -399,6 +396,7 @@ private function sendUpdateToRabbitMQ($client)
     $channel->close();
     $connection->close();
 }
+
 
 
  
