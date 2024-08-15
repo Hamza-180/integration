@@ -89,15 +89,50 @@ while (true) {
         }
     }
 
+    function update_user_wordpress($data) {
+        if (!isset($data['client_id'])) {
+            echo "Missing client_id in update message\n";
+            return;
+        }
+    
+        $client = new Client();
+        $url = "http://192.168.129.69:8081/wp-json/wp/v2/clients/" . $data['client_id'];
+    
+        $jsonData = [
+            "name" => $data['first_name'],
+            "email" => $data['email'],
+            // Ajoutez d'autres champs nécessaires ici
+        ];
+    
+        try {
+            $response = $client->post($url, [
+                'json' => $jsonData
+            ]);
+    
+            echo "Response status: " . $response->getStatusCode() . "\n";
+            echo "Response body: " . $response->getBody() . "\n";
+    
+            if ($response->getStatusCode() == 200) {
+                echo "Action update completed for user: " . $data['email'] . "\n";
+            } else {
+                echo "Action update failed for user: " . $data['email'] . "\n";
+                echo "Response: " . $response->getBody() . "\n";
+            }
+        } catch (Exception $e) {
+            echo "Error processing update action: " . $e->getMessage() . "\n";
+            echo "Stack trace: " . $e->getTraceAsString() . "\n";
+        }
+    }
+    
     $callback = function($msg) {
         echo 'Received ', $msg->body, "\n";
         $data = json_decode($msg->body, true);
-
+    
         if (!isset($data['action'])) {
             echo "Missing action in message\n";
             return;
         }
-
+    
         $action = $data['action'];
         switch ($action) {
             case 'create':
@@ -106,13 +141,16 @@ while (true) {
             case 'delete':
                 delete_user_wordpress($data);
                 break;
+            case 'update':
+                update_user_wordpress($data);
+                break;
             default:
                 echo "Unknown action: $action\n";
                 break;
         }
         echo "Done\n";
     };
-
+    
     $channel->basic_consume('foss_client_queue', '', false, true, false, false, $callback);
 
     while ($channel->is_consuming()) {
