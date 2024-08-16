@@ -1,0 +1,49 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build consumer image
+        run: |
+          cd consumer
+          docker build -t consumer:latest .
+
+      - name: Build consumerfoss image
+        run: |
+          cd consumerfoss
+          docker build -t consumerfoss:latest .
+
+      - name: Build fossbilling image
+        run: |
+          cd fossbilling
+          docker build -t fossbilling:latest .
+
+      - name: Build wordpress image
+        run: |
+          cd wordpress
+          docker build -t wordpress:latest .
+
+      - name: Deploy
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER: ${{ secrets.SERVER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan $SERVER >> ~/.ssh/known_hosts
+          scp docker-compose.yml hamza@$SERVER:/home/hamza/integration
+          ssh hamza@$SERVER "cd /home/hamza/integration && docker-compose down && docker-compose up -d"
