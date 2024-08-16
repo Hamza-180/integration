@@ -117,7 +117,7 @@ while (true) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
 
         $username = "admin";
-        $password = "ASt5SAK6Feta00Fnlsb19FDvqtWoVlUP";
+        $password = "ASt5SAK6Feta00Fnlsb19FDvqtWoVlUA";
         curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
 
         // Set options for debugging
