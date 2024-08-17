@@ -52,8 +52,15 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           echo "Permissions de la clé privée définies"
 
-          # Ajout d'une vérification des permissions de la clé privée
+          # Vérification des permissions de la clé privée
           ls -l ~/.ssh/id_ed25519
+
+          # Test de connectivité avec ping et netcat
+          echo "Test de connectivité avec ping"
+          ping -c 4 192.168.129.69 || (echo "L'hôte est injoignable via ping" && exit 1)
+
+          echo "Test de connectivité avec netcat"
+          nc -zv 192.168.129.69 22 || (echo "Impossible de se connecter à l'hôte via le port 22" && exit 1)
 
           echo "Tentative d'ajout de l'hôte au fichier known_hosts"
           ssh-keyscan 192.168.129.69 >> ~/.ssh/known_hosts || (echo "ssh-keyscan a échoué" && exit 1)
