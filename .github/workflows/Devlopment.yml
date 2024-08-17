@@ -42,20 +42,26 @@ jobs:
           SERVER: 192.168.129.69
         run: |
           mkdir -p ~/.ssh
+          echo "Création du dossier .ssh terminé"
+
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
+          echo "Clé SSH ajoutée au fichier id_ed25519"
+
           echo "${SSH_PRIVATE_KEY}" | sha256sum
-
+          
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan 192.168.129.69 >> ~/.ssh/known_hosts
+          echo "Permissions de la clé privée définies"
 
+          ssh-keyscan 192.168.129.69 >> ~/.ssh/known_hosts
+          echo "Hôte ajouté au fichier known_hosts"
           
           echo "Vérification de l'emplacement du fichier integration/docker-compose.yml"
           ls -l integration/docker-compose.yml || (echo "Fichier integration/docker-compose.yml non trouvé !" && exit 1)
-
-         
+          
+          echo "Transfert du fichier docker-compose.yml vers le serveur"
           scp -v integration/docker-compose.yml hamza@192.168.129.69:/home/hamza/integration
           echo "SCP terminé avec succès"
-
-         
+          
+          echo "Exécution des commandes Docker Compose sur le serveur"
           ssh -v hamza@192.168.129.69 "cd /home/hamza/integration && docker-compose down && docker-compose up -d"
           echo "Commande SSH exécutée avec succès"
