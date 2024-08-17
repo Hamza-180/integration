@@ -43,6 +43,8 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
+          echo "${SSH_PRIVATE_KEY}" | sha256sum
+
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan 192.168.129.69 >> ~/.ssh/known_hosts
           scp docker-compose.yml hamza@192.168.129.69:/home/hamza/integration
