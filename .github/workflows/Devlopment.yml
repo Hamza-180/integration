@@ -47,5 +47,15 @@ jobs:
 
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan 192.168.129.69 >> ~/.ssh/known_hosts
-          scp docker-compose.yml hamza@192.168.129.69:/home/hamza/integration
-          ssh hamza@192.168.129.69 "cd /home/hamza/integration && docker-compose down && docker-compose up -d"
+
+          
+          echo "Vérification de l'emplacement du fichier integration/docker-compose.yml"
+          ls -l integration/docker-compose.yml || (echo "Fichier integration/docker-compose.yml non trouvé !" && exit 1)
+
+         
+          scp -v integration/docker-compose.yml hamza@192.168.129.69:/home/hamza/integration
+          echo "SCP terminé avec succès"
+
+         
+          ssh -v hamza@192.168.129.69 "cd /home/hamza/integration && docker-compose down && docker-compose up -d"
+          echo "Commande SSH exécutée avec succès"
