@@ -3,11 +3,11 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - Main
+      - main 
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  
 
     steps:
       - name: Checkout code
@@ -39,11 +39,11 @@ jobs:
       - name: Deploy
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SERVER: 192.168.129.69
+          SERVER_IP: ${{ secrets.SERVER }}  
         run: |
           mkdir -p ~/.ssh
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan $SERVER >> ~/.ssh/known_hosts
-          scp docker-compose.yml hamza@$SERVER:/home/hamza/integration
-          ssh hamza@$SERVER "cd /home/hamza/integration && docker-compose down && docker-compose up -d"
+          ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
+          scp -v /home/hamza/integration/docker-compose.yml hamza@$SERVER_IP:/home/hamza/integration
+          ssh hamza@$SERVER_IP "cd /home/hamza/integration && docker-compose down && docker-compose up -d"
