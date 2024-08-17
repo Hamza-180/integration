@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  
 
     steps:
       - name: Checkout code
@@ -42,37 +42,8 @@ jobs:
           SERVER: 192.168.129.69
         run: |
           mkdir -p ~/.ssh
-          echo "Création du dossier .ssh terminé"
-
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
-          echo "Clé SSH ajoutée au fichier id_ed25519"
-
-          echo "${SSH_PRIVATE_KEY}" | sha256sum
-
           chmod 600 ~/.ssh/id_ed25519
-          echo "Permissions de la clé privée définies"
-
-          # Vérification des permissions de la clé privée
-          ls -l ~/.ssh/id_ed25519
-
-          # Test de connectivité avec ping et netcat
-          echo "Test de connectivité avec ping"
-          ping -c 4 192.168.129.69 || (echo "L'hôte est injoignable via ping" && exit 1)
-
-          echo "Test de connectivité avec netcat"
-          nc -zv 192.168.129.69 22 || (echo "Impossible de se connecter à l'hôte via le port 22" && exit 1)
-
-          echo "Tentative d'ajout de l'hôte au fichier known_hosts"
-          ssh-keyscan 192.168.129.69 >> ~/.ssh/known_hosts || (echo "ssh-keyscan a échoué" && exit 1)
-          echo "Hôte ajouté au fichier known_hosts"
-
-          echo "Vérification de l'emplacement du fichier integration/docker-compose.yml"
-          ls -l integration/docker-compose.yml || (echo "Fichier integration/docker-compose.yml non trouvé !" && exit 1)
-
-          echo "Transfert du fichier docker-compose.yml vers le serveur"
-          scp -v integration/docker-compose.yml hamza@192.168.129.69:/home/hamza/integration || (echo "SCP a échoué" && exit 1)
-          echo "SCP terminé avec succès"
-
-          echo "Exécution des commandes Docker Compose sur le serveur"
-          ssh -v hamza@192.168.129.69 "cd /home/hamza/integration && docker-compose down && docker-compose up -d" || (echo "SSH a échoué" && exit 1)
-          echo "Commande SSH exécutée avec succès"
+          ssh-keyscan 192.168.129.69 >> ~/.ssh/known_hosts
+          scp -v integration/docker-compose.yml hamza@192.168.129.69:/home/hamza/integration
+          ssh hamza@192.168.129.69 "cd /home/hamza/integration && docker-compose down && docker-compose up -d"
