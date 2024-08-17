@@ -55,16 +55,17 @@ jobs:
           # Ajout d'une vérification des permissions de la clé privée
           ls -l ~/.ssh/id_ed25519
 
-          ssh-keyscan 192.168.129.69 >> ~/.ssh/known_hosts
+          echo "Tentative d'ajout de l'hôte au fichier known_hosts"
+          ssh-keyscan 192.168.129.69 >> ~/.ssh/known_hosts || (echo "ssh-keyscan a échoué" && exit 1)
           echo "Hôte ajouté au fichier known_hosts"
 
           echo "Vérification de l'emplacement du fichier integration/docker-compose.yml"
           ls -l integration/docker-compose.yml || (echo "Fichier integration/docker-compose.yml non trouvé !" && exit 1)
 
           echo "Transfert du fichier docker-compose.yml vers le serveur"
-          scp -v integration/docker-compose.yml hamza@192.168.129.69:/home/hamza/integration
+          scp -v integration/docker-compose.yml hamza@192.168.129.69:/home/hamza/integration || (echo "SCP a échoué" && exit 1)
           echo "SCP terminé avec succès"
 
           echo "Exécution des commandes Docker Compose sur le serveur"
-          ssh -v hamza@192.168.129.69 "cd /home/hamza/integration && docker-compose down && docker-compose up -d"
+          ssh -v hamza@192.168.129.69 "cd /home/hamza/integration && docker-compose down && docker-compose up -d" || (echo "SSH a échoué" && exit 1)
           echo "Commande SSH exécutée avec succès"
