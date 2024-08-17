@@ -39,11 +39,11 @@ jobs:
       - name: Deploy
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SERVER: ${{ secrets.SERVER }}
+          SERVER: 192.168.129.69
         run: |
           mkdir -p ~/.ssh
           echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan $SERVER >> ~/.ssh/known_hosts
-          scp docker-compose.yml hamza@$SERVER:/home/hamza/integration
-          ssh hamza@$SERVER "cd /home/hamza/integration && docker-compose down && docker-compose up -d"
+          ssh-keyscan 192.168.129.69 >> ~/.ssh/known_hosts
+          scp docker-compose.yml hamza@192.168.129.69:/home/hamza/integration
+          ssh hamza@192.168.129.69 "cd /home/hamza/integration && docker-compose down && docker-compose up -d"
