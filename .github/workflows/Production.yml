@@ -3,7 +3,7 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main 
+      - main
 
 jobs:
   build-and-deploy:
@@ -12,6 +12,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: "Debug: Docker"
+        run: docker info
+
+      - name: "Debug: System Info"
+        run: |
+          whoami
+          groups
+          hostname
+          pwd
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
