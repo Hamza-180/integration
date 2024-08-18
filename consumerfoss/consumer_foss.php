@@ -32,7 +32,8 @@ while (true) {
 
     // Function to handle the user creation
     function create_user_foss($data) {
-        $url = "http://192.168.129.69:8090/api/admin/client/create";
+        $url = "http://fossbilling/api/admin/client/create";
+
         $data = array(
             "email" => $data['email'],
             "first_name" => $data['name'],
@@ -47,7 +48,7 @@ while (true) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
 
         $username = "admin";
-        $password = "p1gg17a1OMgTy3bgwpZKLOrpNOHJB8H0";
+        $password = "0bUOyaXGqRKT9pkJWfjaCgr1fz258Hxa";
         curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
 
         // Set options for debugging
@@ -68,7 +69,7 @@ while (true) {
 
     // Function to handle the user deletion
     function delete_user_foss($data) {
-        $url = "http://192.168.129.69:8090/api/admin/client/delete";
+        $url = "http://fossbilling/api/admin/client/delete";
         $data = array(
             "id" => $data['id']
         );
@@ -81,7 +82,7 @@ while (true) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
 
         $username = "admin";
-        $password = "p1gg17a1OMgTy3bgwpZKLOrpNOHJB8H0";
+        $password = "0bUOyaXGqRKT9pkJWfjaCgr1fz258Hxa";
         curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
 
         // Set options for debugging
@@ -102,7 +103,7 @@ while (true) {
 
     // Function to handle the user update
     function update_user_foss($data) {
-        $url = "http://192.168.129.69:8090/api/admin/client/update";
+        $url = "http://fossbilling/api/admin/client/update"; 
         $data = array(
             "id" => $data['id'],
             "email" => $data['email'],
@@ -117,7 +118,7 @@ while (true) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
 
         $username = "admin";
-        $password = "p1gg17a1OMgTy3bgwpZKLOrpNOHJB8H0";
+        $password = "0bUOyaXGqRKT9pkJWfjaCgr1fz258Hxa";
         curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
 
         // Set options for debugging

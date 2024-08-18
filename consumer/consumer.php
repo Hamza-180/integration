@@ -35,7 +35,7 @@ while (true) {
 
     function create_user_wordpress($data) {
         $client = new Client();
-        $url = "http://192.168.129.69:8081/wp-json/wp/v2/clients";
+        $url =  "http://wordpress/wp-json/wp/v2/clients/";
 
         $jsonData = [
             "id" => $data['client_id'],
@@ -70,7 +70,7 @@ while (true) {
         }
 
         $client = new Client();
-        $url = "http://192.168.129.69:8081/wp-json/wp/v2/clients/" . $data['client_id'];
+        $url =  "http://wordpress/wp-json/wp/v2/clients/" . $data['client_id'];
 
         try {
             $response = $client->delete($url);
@@ -97,7 +97,7 @@ while (true) {
         }
 
         $client = new Client();
-        $url = "http://192.168.129.69:8081/wp-json/wp/v2/clients/" . $data['client_id'];
+        $url =  "http://wordpress/wp-json/wp/v2/clients/" . $data['client_id'];
 
         $jsonData = [
             "name" => $data['name'],
