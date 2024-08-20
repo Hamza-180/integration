@@ -44,6 +44,17 @@ Before you start, make sure you have the following installed:
 - **Client Management**: Add, edit, or delete client data.
 - **Bi-directional Communication**: Data updates in FOSSBilling automatically reflect in WordPress, and vice versa, using RabbitMQ and API calls.
 
+## Credentials
+
+### FossBilling
+- **Email**: hamza.amghar@student.ehb.be
+- **Password**: Student1
+
+### WordPress
+- **Username**: hamza
+- **Password**: student1
+
+
 ## Important Notes
 
 - All communication between WordPress and FOSSBilling is handled via RabbitMQ.
@@ -60,4 +71,4 @@ For more detailed documentation, please refer to the [Confluence page](https://a
 
 ## Acknowledgements
 
-While I did not directly reuse any code from the first attempt, the experience and lessons learned from it greatly inspired and informed the development of this project.
+While I did not directly reuse any code from the first attempt, the experience and lessons learned from it greatly inspired and informed the development of this project. Additionally, I have also reused code from the FossBilling project, which was available as open-source. I would like to express my gratitude to the FossBilling community for making their code accessible and for their contributions to the open-source ecosystem.
